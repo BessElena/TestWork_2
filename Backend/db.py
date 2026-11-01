@@ -15,7 +15,18 @@ def create_database():
             wish TEXT
         )
     ''')
-
+    cursor.execute('SELECT COUNT(*) FROM participants')
+    if cursor.fetchone()[0] == 0:
+        test_participants = [
+            ("Анна", "anna@example.com", "Хочу попасть на хакатон"),
+            ("Борис", "boris@example.com", "Мечтаю выучить Flask"),
+            ("Вика", "vika@example.com", "Хочется собрать крутой пет-проект")
+        ]
+        cursor.executemany('''
+                INSERT INTO participants (name, email, wish)
+                VALUES (?, ?, ?)
+            ''', test_participants)
+        print("Добавлены тестовые участники.")
 
 
     conn.commit()
