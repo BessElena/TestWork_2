@@ -3,5 +3,5 @@
 Frontend/node_modules/
 Frontend/dist/
 __pycache__/
-*.pyc
+.pyc
 .vscode/
