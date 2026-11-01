@@ -1,36 +1,26 @@
 import sqlite3
 
+DB_NAME = 'participants.db'
+
 def create_database():
-    conn = sqlite3.connect('games.db')
+    conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
+    # Создаём таблицу participants
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS games (
+        CREATE TABLE IF NOT EXISTS participants (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            genre TEXT,
-            platform TEXT,
-            description TEXT
+            name TEXT NOT NULL,
+            email TEXT NOT NULL,
+            wish TEXT
         )
     ''')
 
 
-    cursor.execute('SELECT COUNT(*) FROM games')
-    if cursor.fetchone()[0] == 0:
-        test_game = (
-            "Космический рейнджер",
-            "Экшен",
-            "PC",
-            "Космический шутер с прокачкой корабля."
-        )
-        cursor.execute('''
-            INSERT INTO games (title, genre, platform, description)
-            VALUES (?, ?, ?, ?)
-        ''', test_game)
 
     conn.commit()
     conn.close()
-    print("База данных и таблица созданы. Тестовые данные добавлены (если их не было).")
+    print(f"База данных '{DB_NAME}' и таблица 'participants' готовы.")
 
 
 if __name__ == '__main__':

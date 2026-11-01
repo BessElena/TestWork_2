@@ -5,8 +5,10 @@ import sqlite3
 app = Flask(__name__)
 CORS(app)
 
+DB_NAME = 'participants.db'
+
 def get_db_connection():
-    conn = sqlite3.connect('games.db')
+    conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -14,46 +16,78 @@ def get_db_connection():
 def home():
     return "Backend is working!"
 
-
-@app.route('/api/games', methods=['GET'])
-def get_games():
+# GET /api/participants — список всех участников
+@app.route('/api/participants', methods=['GET'])
+def get_participants():
     try:
-        genre = request.args.get('genre')
-        search = request.args.get('search')
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute('SELECT * FROM participants')
+        rows = cursor.fetchall()
+        conn.close()
+
+        participants_list = [dict(row) for row in rows]
+
+        return jsonify({
+            "success": True,
+            "data": participants_list,
+            "count": len(participants_list)
+        })
+    except sqlite3.Error as e:
+        return jsonify({
+            "success": False,
+            "error": "Ошибка базы данных",
+            "details": str(e)
+        }), 500
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": "Внутренняя ошибка сервера",
+            "details": str(e)
+        }), 500
+
+# POST /api/participants — добавить участника
+@app.route('/api/participants', methods=['POST'])
+def add_participant():
+    try:
+        data = request.get_json() or {}
+
+        name = data.get('name')
+        email = data.get('email')
+        wish = data.get('wish', '')
+
+        # Простая валидация
+        if not name or not email:
+            return jsonify({
+                "success": False,
+                "error": "Имя и почта обязательны"
+            }), 400
 
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        query = 'SELECT * FROM games'
-        params = []
+        cursor.execute('''
+            INSERT INTO participants (name, email, wish)
+            VALUES (?, ?, ?)
+        ''', (name, email, wish))
 
-        if genre:
-            query += ' WHERE genre = ?'
-            params.append(genre)
-
-        if search:
-            if 'WHERE' in query:
-                query += ' AND title LIKE ?'
-            else:
-                query += ' WHERE title LIKE ?'
-            params.append(f'%{search}%')
-
-        cursor.execute(query, params)
-        rows = cursor.fetchall()
+        conn.commit()
+        new_id = cursor.lastrowid
         conn.close()
 
-        games_list = [dict(row) for row in rows]
+        new_participant = {
+            "id": new_id,
+            "name": name,
+            "email": email,
+            "wish": wish
+        }
 
         return jsonify({
             "success": True,
-            "data": games_list,
-            "count": len(games_list),
-            "filters": {
-                "genre": genre,
-                "search": search
-            }
-        })
-
+            "data": new_participant,
+            "message": "Участник успешно добавлен"
+        }), 201
     except sqlite3.Error as e:
         return jsonify({
             "success": False,
@@ -68,7 +102,7 @@ def get_games():
         }), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, use_reloader=False)
+    app.run(debug=True, use_reloader=False, port=5000)
 
 
 
